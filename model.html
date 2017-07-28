@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mental Model</title>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<!-- <script src="./js/d3/d3.v4.min.js"></script> -->
+
+<script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+<!-- <script src="./js/jstat.min.js"></script> -->
+
+<style type="text/css">
+
+body {
+    color: #666; 
+    font-family:  serif;  
+    font-size:14px; 
+}
+
+.axis {
+    font: 14px "Trebuchet MS";
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #aaa; 
+    stroke-width:2px;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    fill: #666; 
+}
+
+.incr:hover {
+    fill: #ccc;
+}
+
+.circle {
+	stroke: white;
+	stroke-width: 0.5px; 
+}
+
+.circle:hover {
+	fill-opacity: 0.8;
+}
+
+#searchform {
+    padding-bottom: 6px;
+}
+
+#formholder {
+    position: absolute;
+    left: 100px;;
+    top: 25px;  
+    font: 14px "Trebuchet MS"; 
+}
+
+input {
+    font: 13px "Trebuchet MS";
+}
+
+th {
+	text-align:left;
+	padding-right:10px;
+}
+td {
+	padding-right:10px;
+    padding-top:2px;
+}
+
+.button {
+    background-color: white; 
+    border: 1px solid #999;
+    color: #555;
+    padding: 0px 9px;
+    margin:5px 2px;
+    text-align: center;
+    font-size: 13px;
+    cursor: pointer;
+    height:30px;
+    border-radius:3px;
+}
+
+
+</style>
+</head>
+
+<body>
+
+<div id="formholder" >  
+<form id="settingsform"  onSubmit="return update();" >    
+
+<table> 
+<tr>
+    <th>
+    Sector: 
+    </th>
+    <th>
+    Budget Pct:
+    </th>
+    <th>
+    Allocation:
+    </th> 
+</tr>
+<tr>
+    <td>
+    <span style="color:#6BAED6;"> &#9724;</span> Markets: 
+    </td>
+    <td >  
+    <input  type="text" id="marketsportion" size="3" value="75" placeholder="%">
+    </td>
+    <td>
+    Exploit<input type="range" id="marketsexplore" style="width:80px;" min="0" max="100" step="any">Explore
+    </td>
+</tr>
+<tr>
+    <td>
+    <span style="color:#74C476;"> &#9724;</span> Gov:
+    </td>
+    <td > <!--  style="text-align:center;" -->
+    <input  type="text" id="governmentportion" size="3" value="20" placeholder="%">
+    </td>
+    <td>
+    Exploit<input type="range" id="governmentexplore" style="width:80px;" min="0" max="100" step="any">Explore
+    </td>
+</tr>
+<tr>
+    <td>
+    <span style="color:#EF3B2C;"> &#9724;</span> Research: 
+    </td>
+    <td > 
+    <input  type="text" id="researchportion" size="3" value="5" placeholder="%">
+    </td>
+    <td>
+    Exploit<input type="range" id="researchexplore" style="width:80px;" min="0" max="100" step="any">Explore 
+    </td>
+</tr>
+<tr>
+    <td style="min-width:110px">
+    <b>Budget:</b> <span id="budget"> </span>
+    </td>
+    <td>
+    <b>Impact:</b> <span id="score"> </span>
+    </td>
+</tr>
+<tr>
+	<td>
+    <b>Years:</b> <span id="steps"> </span>
+    </td>
+    <td>
+    <b>Impact/Yr:</b> <span id="stepscore"> </span>
+    </td>
+</tr>
+<tr>
+    <td>
+    <input type="button" class="button" value="&#8635;" onclick="reload();">
+    <input id="search" name="Submit" class="button" type="button"  onclick="update();" value="Next &#9658;" >
+    </td>
+</tr>
+</table>
+
+</form>
+
+</div> 
+
+
+<script type="text/javascript">
+
+
+function generateCopula(rows, columns, correlation) {
+    //https://en.wikipedia.org/wiki/Copula_(probability_theory)
+
+    //Create uncorrelated standard normal samples
+    var normSamples = jStat.randn(rows, columns);
+
+    //Create lower triangular cholesky decomposition of correlation matrix
+    var A = jStat(jStat.cholesky(correlation));
+
+    //Create correlated samples through matrix multiplication
+    var normCorrSamples = A.multiply(normSamples);
+
+    //Convert to uniform correlated samples over 0,1 using normal CDF
+    var normDist = jStat.normal(0,1);
+    var uniformCorrSamples = normCorrSamples.map(function(x) {return normDist.cdf(x);});
+
+    return uniformCorrSamples;
+
+}
+
+
+//copulaToLognorm
+function generateCorrLognorm(number, mu, sigma, correlation) {
+
+    //Create uniform correlated copula
+    //https://en.wikipedia.org/wiki/Copula_(probability_theory)
+    var copula = generateCopula(mu.length, number, correlation);
+
+    //Create unique lognormal distribution for each marginal
+    var lognormDists = [];
+    for (var i = 0; i < mu.length; i++) {
+        lognormDists.push(jStat.lognormal(mu[i], sigma[i]));
+    }
+
+    //Generate correlated lognormal samples using the inverse transform method:
+    //https://en.wikipedia.org/wiki/Inverse_transform_sampling
+    var lognormCorrSamples = copula.map(function(x, row, col) {return lognormDists[row].inv(x);});
+    return lognormCorrSamples;
+}
+
+
+function generateSectorLognorm(number, sector) {
+    var settings = {
+        "markets": {"mu": [0,0], "sigma": [0.25, 0.5], "correlation":[[1.0, 0.5],[0.5, 1.0]]},
+        "government": {"mu": [0.3,0.6], "sigma": [0.3, 0.7], "correlation":[[1.0, 0.6],[0.6, 1.0]]},  
+        "research": {"mu": [0.3,1.0], "sigma": [0.3, 0.6], "correlation":[[1.0, 0.6],[0.6, 1.0]]}  
+    }
+
+    if (number === 0 ) {return [];}
+
+
+    var data  = generateCorrLognorm(number, settings[sector].mu, settings[sector].sigma, settings[sector].correlation);
+    data = data.transpose();
+
+    data = data.slice(0,data.length).map(function(a) {
+        var size = Math.random(), 
+            id = Math.round(size*1000000);
+
+        var x = a[0];
+
+        //Switch 10 percent of Y to negative
+        var y = Math.random() > 0.90 ? -a[1]/2 : a[1];
+
+        return {"x":x, "y": y, "size": size, "id": id, "group": sector, "trans":0};
+    });
+
+    return data;
+}
+
+
+var data = generateSectorLognorm(400, 'markets')    
+    .concat(generateSectorLognorm(100, 'government')) 
+    .concat(generateSectorLognorm(50, 'research')); 
+
+
+var margin = {top: 20, right: 20, bottom: 20, left: 70},    
+    width = 0.95*window.innerWidth - margin.left - margin.right,   
+    height = 0.95*window.innerHeight - margin.top - margin.bottom;
+
+//Formatting Functions
+var pctFormat = d3.format(".2%");
+var thsdFormat = d3.format(",");
+var formatDecimal = d3.format(".2f");
+
+//Create SVG
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+var xrange = d3.extent(data, function(d) {return d.x});
+xrange = d3.extent(xrange.concat([0,3]))  //Set mandatory min, max
+
+var yrange = d3.extent(data, function(d) {return d.y});
+yrange = d3.extent(yrange.concat([-3,10])) //Set mandatory min, max
+
+
+//Define scales
+var xScale = d3.scaleLinear()
+    .domain([0, xrange[1]])
+    .range([0, width]);
+
+var yScale = d3.scaleLinear()
+    .domain(yrange)
+    .range([height, 0]);
+
+var rScale = d3.scaleLinear()
+    .domain([0, 1])  
+    .range([3, 10]);  
+
+
+//Define x, y axes w/o ticks
+var xAxis = d3.axisBottom(xScale)
+    .tickFormat("")
+    .tickSize(0);
+  
+var yAxis = d3.axisLeft(yScale)
+    .tickSize(0)
+    .tickFormat(function(d) {
+    if (d === 0) {return d;}
+    else {return "";}
+    });
+
+
+//Append Axes
+svg.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(0," + height*(yrange[1] - 0)/(yrange[1]-yrange[0]) + ")")
+    .call(xAxis)
+    .append("text")
+    .attr("y", "1.5em")  
+    .attr("x", width )   
+    .text("Variation in Impact")   
+    .style("text-anchor", "end"); 
+
+svg.append("g")
+    .attr("class", "axis")
+    .call(yAxis)
+    //.attr("transform", "translate(" + (width/2) + ",0)")  //centers it
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", "-1.5em")  
+    .style("text-anchor", "end")  
+    .text("Marginal Social Impact");  
+
+
+//Global variables
+var budget = 10, 
+    score = 0;
+    steps = 0;
+
+
+function calculateUpdate() {
+
+    var sectors = ["markets", "government", "research"];
+
+    //Get form settings
+    var settings = {};
+
+    for (var i=0; i<sectors.length; i++) {
+        var current = sectors[i];
+        settings[current] = {
+            "portion" : document.getElementById(current + "portion").value/100,
+            "explore" : document.getElementById(current + "explore").value/100,
+            "exploit": (1 - document.getElementById(current + "explore").value/100)
+        }
+    }
+
+    // Increase budget, ~Economic growth
+    budget += 0.03*settings["markets"].portion*budget;
+
+    //Find the largest percentage each sector can be funded,
+    //apply it to the data, and delete any that approach zero
+    for (var i=0; i<sectors.length; i++) {
+
+        var current = sectors[i];
+        var explore_budget = settings[current].explore*settings[current].portion*budget; 
+        var exploit_budget = settings[current].exploit*settings[current].portion*budget;
+
+        var temp = data.filter(function(a){
+            return a.group === current;
+        });
+
+        if (temp.length === 0 || settings[current].exploit_budget <= 0) {
+            //Lognormal from copula
+            //Round for now, TODO: come up with better solution
+            data = data.concat(generateSectorLognorm(Math.ceil(explore_budget), current));
+            continue;   // Avoids infinite while loop
+        }
+
+        var pct = 0.0,
+            sum = 0.0,
+            total = 0.0;
+
+        //Find max percentage of each project to fund
+        while (sum <= exploit_budget) {
+            sum = 0.0;
+            pct += 0.001;
+            for (var j = 0; j < temp.length; j++) {
+                sum += pct * temp[j].size;
+            }
+        }
+        pct -= 0.001; // Reduce percent to be the amount before the sum exceeded budget
+
+        if (pct >= 1.0) {
+            pct = 1.0; // Don't use a pct larger than 100
+        }
+
+        // Iterate over array backwards so indexing preserved:
+        // https://stackoverflow.com/questions/9882284
+        var k = data.length;  
+        while (k--) {
+            if (data[k].group === current) {
+
+                //Change in size * average impact over y interval
+                score += pct*data[k].size*((data[k].y+data[k].y*(1-pct))/2);
+
+                data[k].size *= (1-pct);  //Reduce size according to budget spent
+                data[k].y *= (1-pct);  //Reduce marginal impact 
+                if (data[k].group === "research" && exploit_budget > 0) {
+                    //Multiply pct by a random decrement to get risk change
+                    data[k].x *= (1-pct*Math.random());  
+
+                    //Transition research to markets, uses random to leave some uncertainty in tech transfer.  
+                    if (data[k].x < 1.25 && Math.random() > 0.9) {  
+                        data[k].group = "markets";
+                        data[k].trans = 1;
+                    }
+                }
+
+                //Remove small circles to prevent buildup 
+                if (data[k].size <= 0.05) {  
+                    //Splice during backward iteration preserves index numbers
+                    data.splice(k,1);  
+                }
+            }
+        }
+
+        //Lognormal from copula:
+        //Round for now, TODO: come up with better solution
+        data = data.concat(generateSectorLognorm(Math.ceil(explore_budget), current));
+
+    }
+
+    //Update budget, score, steps text:
+    steps += 1;
+    d3.select("#budget").text(formatDecimal(Math.round(budget*100)/100));
+    d3.select("#score").text(formatDecimal(Math.round(score*100)/100));
+    d3.select("#steps").text(Math.round(steps*100)/100);
+    d3.select("#stepscore").text(formatDecimal(Math.round(score/steps*100)/100)); 
+
+
+}
+
+
+function update() {
+
+    calculateUpdate();
+
+    var circles = svg.selectAll("circle")
+        .data(data, function(d) { return d.id; });
+
+    circles.exit().remove();
+
+    circles.enter().append("circle")
+        .attr("class", "circle")
+        .merge(circles)
+        .attr("cx", function(d) {
+            return xScale(d.x);
+        })
+        .attr("cy", function(d) {
+            return yScale(d.y);
+        })
+        .transition()
+        .duration(750)
+        .attr("r", function(d) {
+            return rScale(d.size);  
+        })
+        .attr("fill",function(d){
+            if (d.group === 'markets') {return '#6BAED6';}  
+            else if (d.group === 'government') {return '#74C476';}  
+            else if (d.group === 'research') {return "#EF3B2C";}  
+        })
+        .attr("trans", function(d) {return d.trans})
+        .style("stroke",function(d){
+            if (d.trans === 1) {return "#EF3B2C";}  
+        })
+        .style("stroke-width",function(d){
+            if (d.trans === 1) {return "2px";} 
+        });;
+ 
+
+}
+
+function initialize(data) {
+
+    //Create any new circles
+    var circles = svg.selectAll("circle")
+        .data(data, function(d) { return d.id; })
+        .enter().append("circle")
+        .attr("class", "circle")
+        .attr("cx", function(d) {
+            return xScale(d.x);
+        })
+        .attr("cy", function(d) {
+            return yScale(d.y);
+        })
+        .attr("r", function(d) {
+            return rScale(d.size);  
+        })
+        .attr("fill",function(d){
+            if (d.group === 'markets') {return '#6BAED6';}  
+            else if (d.group === 'government') {return '#74C476';}  
+            else if (d.group === 'research') {return "#EF3B2C";}  
+        })
+        .attr("trans", function(d) {return d.trans});
+
+        //Set budget, score based on globals:
+        d3.select("#budget").text(formatDecimal(Math.round(budget*100)/100));
+        d3.select("#score").text(formatDecimal(Math.round(score*100)/100));
+        d3.select("#steps").text(Math.round(steps*100)/100);
+        d3.select("#stepscore").text(formatDecimal(Math.round(score*100)/100));   
+
+}
+
+function reload() {
+    svg.selectAll("circle").remove()
+
+    //Modify global variables
+    budget = 10;
+    score = 0;
+    steps = 0;
+
+    data = generateSectorLognorm(200, 'markets')    
+        .concat(generateSectorLognorm(100, 'government')) 
+        .concat(generateSectorLognorm(50, 'research')); 
+
+    //Recalculate ranges,, scales
+    xrange = d3.extent(data, function(d) {return d.x});
+    yrange = d3.extent(data, function(d) {return d.y});
+
+    //Define scales
+    xScale.domain([0, xrange[1]]);
+    yScale.domain(yrange);
+
+    xAxis = d3.axisBottom(xScale).tickFormat("").tickSize(0);
+    yAxis = d3.axisLeft(yScale).tickSize(0)
+        .tickFormat(function(d) {
+            if (d === 0) {return d;}
+            else {return "";}
+        });
+
+    //Redraw Axes
+    svg.selectAll("g.axis").remove()
+
+    svg.append("g")
+        .attr("class", "axis")
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", "-1.5em")  
+        .style("text-anchor", "end")  
+        .text("Marginal Social Impact"); 
+
+
+    svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height*(yrange[1] - 0)/(yrange[1]-yrange[0]) + ")")
+        .call(xAxis)
+        .append("text")
+        .attr("y", "1.5em")   
+        .attr("x", width )   
+        .text("Variation in Impact")  
+        .style("text-anchor", "end");  
+
+
+    initialize(data);
+}
+
+
+
+//Initialize scatterplot
+initialize(data);
+
+</script>
+</body>
+</html>
+
