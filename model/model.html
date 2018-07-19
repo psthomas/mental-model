@@ -211,13 +211,20 @@ function generateCorrLognorm(number, mu, sigma, correlation) {
 
 
 function generateSectorLognorm(number, sector) {
+    // var settings = {
+    //     "markets": {"mu": [0,0], "sigma": [0.25, 0.5], "correlation":[[1.0, 0.5],[0.5, 1.0]]},
+    //     "government": {"mu": [0.3,0.6], "sigma": [0.3, 0.7], "correlation":[[1.0, 0.6],[0.6, 1.0]]},  
+    //     "research": {"mu": [0.3,1.0], "sigma": [0.3, 0.6], "correlation":[[1.0, 0.6],[0.6, 1.0]]}  
+    // }
     var settings = {
         "markets": {"mu": [0,0], "sigma": [0.25, 0.5], "correlation":[[1.0, 0.5],[0.5, 1.0]]},
-        "government": {"mu": [0.3,0.6], "sigma": [0.3, 0.7], "correlation":[[1.0, 0.6],[0.6, 1.0]]},  
-        "research": {"mu": [0.3,1.0], "sigma": [0.3, 0.6], "correlation":[[1.0, 0.6],[0.6, 1.0]]}  
+        "government": {"mu": [0.3,1], "sigma": [0.3, 0.7], "correlation":[[1.0, 0.6],[0.6, 1.0]]},  
+        "research": {"mu": [0.5,1], "sigma": [0.3, 0.6], "correlation":[[1.0, 0.6],[0.6, 1.0]]}  
     }
 
     if (number === 0 ) {return [];}
+
+    var mult = {'markets': 0.7, 'government': 0.85, 'research': 1.0}
 
 
     var data  = generateCorrLognorm(number, settings[sector].mu, settings[sector].sigma, settings[sector].correlation);
@@ -230,7 +237,12 @@ function generateSectorLognorm(number, sector) {
         var x = a[0];
 
         //Switch 10 percent of Y to negative
-        var y = Math.random() > 0.90 ? -a[1]/2 : a[1];
+        //var y = Math.random() > 0.90 ? -a[1]/2 : a[1];
+        //var y = Math.random() > 0.90 ? -Math.sqrt(x*Math.random())/2 : Math.sqrt(x*Math.random());
+        //var y = Math.random() > 0.90 ? -Math.random()*Math.sqrt(x)/2 : Math.random()*Math.sqrt(x);
+        //var y = Math.random() > 0.90 ? -Math.random()*Math.log(x)/2 : Math.random()*Math.log(x);
+        //var y = Math.random() > 0.90 ? -Math.random()*Math.pow(x, 0.9)/2 : Math.random()*Math.pow(x, 0.9);
+        var y = Math.random() > 0.90 ? -Math.random()*mult[sector]*Math.sqrt(x)/2 : Math.random()*mult[sector]*Math.sqrt(x);
 
         return {"x":x, "y": y, "size": size, "id": id, "group": sector, "trans":0};
     });
