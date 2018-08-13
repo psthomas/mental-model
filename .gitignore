@@ -1,5 +1,5 @@
 .DS_Store
 model/js/*
-notes/*
-causal-network/math.js
-
+model/notes/*
+causal-network/js/*
+causal-network/notes

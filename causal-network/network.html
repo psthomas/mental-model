@@ -5,11 +5,12 @@
 <meta charset="utf-8">
 <title>Network Model</title>
 <!-- <script src="https://d3js.org/d3.v4.min.js"></script> -->
-<script src="https://d3js.org/d3.v3.min.js"></script>
-<!-- <script src="./js/d3/d3.v4.min.js"></script> -->
+
+<!-- <script src="https://d3js.org/d3.v3.min.js"></script> -->
+<script src="./js/d3.v3.min.js"></script>
 
 <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/5.0.3/math.js"></script> -->
-<script type="text/javascript" src="./math.js"></script>
+<script type="text/javascript" src="./js/math.js"></script>
 
 <style type="text/css">
 
@@ -51,10 +52,11 @@ text {
 }
 
 table {
-  float:left;
+  /*float:left;*/
   position:absolute;
   /*display:inline;*/
   margin:10px;
+  text-align:center;
 }
 
 #end {
@@ -65,6 +67,29 @@ table {
   /*border: 1px solid #aaa;*/
 }
 
+#score {
+  display:inline-block;
+  position:absolute;
+}
+
+#wrapper {
+  text-align:center;
+  margin:auto;
+}
+
+
+#reset {
+  /*text-align:center;*/
+/*  margin-left:auto;
+  margin-right:auto;*/
+  /*margin: 0 auto;*/
+/*  display:inline-block;*/
+  position:absolute;
+  bottom:0;
+  display:inline-block;
+  margin:auto;
+}
+
 
 </style>
 </head>
@@ -72,14 +97,33 @@ table {
 <body>
 
 
-
-
+<!-- <div id='wrapper'>
+  <div id="score">
+    <table>
+      <tbody>
+        <tr>
+          <th> Direct Impact: </th>
+          <td id="direct">0.00</td>
+        </tr>
+        <tr>
+          <th> Indirect Impact: </th>
+          <td id="indirect">0.00</td>
+        </tr>
+        <tr>
+          <th> Total Impact: </th>
+          <td id="total">0.00</td>
+        </tr>
+      </tbody>
+    </table>
+  (click to reset)
+  </div>
+</div> -->
 
 <table>
   <tbody>
     <tr>
       <th> <u>Impacts</u> </th>
-      <td id="elements"></td>
+      <!-- <td id="elements">(click to reset)</td> -->
     </tr>
     <tr>
       <th> Direct: </th>
@@ -95,8 +139,13 @@ table {
     </tr>
   </tbody>
 </table>
-
 <!-- <button id='reset'>Reset</button> -->
+
+<div id='wrapper'>
+<div id='reset'>
+<p>(click to reset)</p>
+</div>
+</div>
 
 <div id="holder">
 </div>
@@ -107,10 +156,12 @@ table {
 //Source: http://jsfiddle.net/bswv1mqe/6/
 // https://stackoverflow.com/questions/27785505
 
-
+// Best: Networks for Thinking About the World
+// Best: Network Models for Thinking About the World
 //An alternate mental model, network style
 //A network model for thinking about the world
-//A network model of the world
+//A network model of the world -- not really a world model, more of an EA one.  
+//Causal Network Models and Thinking about the world.  
 
 //Writing: 
 //While my previous post saw the world as a set of detached causes that could absorb money, 
@@ -119,6 +170,10 @@ table {
 //some type of upstream intervention like "Increasing the rate of economic growth", or 
 //"strengthening healthcare systems", or "improving educational outcomes", or 
 //"campaigning for a politician".  
+
+//The further your intervention is from the final effect, the more the context, and mediating steps
+//matter.  
+//"Causality in complex interventions", Dean Rickles
 
 //For demonstration purposes, have the cell with the smallest direct effect
 //have the largest indirect one.  
@@ -170,6 +225,16 @@ table {
 //prioritization.  Providing different mental models to switch between depending on the context.
 
 
+//http://effective-altruism.com/ea/1h6/causal_networks_model_i_introduction_user_guide/
+//The model does not explicitly model time passing. Instead it takes as inputs increases of funding for different EA cause areas in 2017, calculates various intermediary effects (including simply modelled feedback loops) and then outputs effects in 2050. We chose 2050 as the end point because of the difficulty of extrapolating estimates much further into the future. The model is therefore not very useful for considering most long-term future effects, although it does output the probability of global catastrophic risks and existential risks occurring before 2050.
+
+//The ethical theories considered are also constrained, with outputs only being sufficient to make crude short-term total utilitarian calculations (which are explained in section 6), estimate QALYs saved as an approximation of value according to some forms of person-affecting views, and set out existential and global catastrophic risk in the time frame considered (2017-2050).
+
+//There are also more general arguments to be made against taking cost-effectiveness estimates too literally, as laid out in this classic GiveWell post, which you might want to keep in mind.
+
+//The Changes In Funding section (in green) contains the model’s inputs, allowing you to compare how funding different causes has different effects. Note the final model is linear in respect to these inputs, so funding by 10 million will not produce any interesting effects not seen by funding it by 1 million. In the real world these elasticity and differential functions have diminishing returns: for instance, increasing funding by 100% often will not change outputs by 100 times as much as increasing funding by 1%. Keep this in mind if you use large numbers as inputs.
+
+
 //TODO: potentially implement a breadth first search that highlights all child branches
 // beyond immediate one
 //TODO: Add possible negative effects.  Will that work with current matrix multiplication?
@@ -196,6 +261,16 @@ table {
 // isn't helpful here because of massive differences in numerical effect/ units. Normalize somehow?  
 //TODO: also, on the actual large network one, add tooltips that explain what the area is.  E.g. global
 //governance.  
+//TODO: Why are some monetary donations differentials, and some elasticities, yet all the units are $mil
+//TODO: Solve first 100 iterations of the matrix multiplication (or as many as possible), then animate the spread
+// across the network.  
+
+// Ok, for the EA version, use their gray, green, red, blue color scheme, then make green ones
+// clickable, show intermediate values on a click (maybe color on if it increased or decresed), 
+// then increase size of output nodes (or change color?), along with value, and Total.  
+
+//NOTE: The final value, node, 42, already calculates the total expected impact:
+//Expected Cumulative change in QALYs (2050)
 
 
 //Globals
@@ -203,6 +278,7 @@ table {
 var order = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 //var impacts = [3, 4, 1, 6, 3, 2, 1]
 var impacts = [3, 4, 2, 6, 1, 2, 2]
+//var impacts = [1, 1, 1, 1, 1, 1, 1]  //Every one now has same impact, it's direct effect is via it's connections
 // var lookup = {};
 // for (var i = 0; i< order.length; i++) {
 //   lookup[order[i]] = impacts[i];
@@ -318,9 +394,12 @@ for (var i=0; i<impacts.length; i++) {
 
 // var width = 700,
 //   height = 450;
-var width = window.innerWidth,
-  height = window.innerHeight;
+var width = 0.9*window.innerWidth,
+  height = 0.9*window.innerHeight;
 
+
+var results = false;  
+var click = false;
 
 
 /////End Globals
@@ -395,6 +474,20 @@ var path = svg.append("g").selectAll("path")
     // .attr("class", function(d) { return "link " + d.type; })
     // .attr("marker-end", function(d) { return "url(#" + d.type + ")"; });
 
+function reset(){
+  click = false; //set global
+  results = false;
+  path.style('opacity', 1);
+  path.style('stroke-dasharray', 0);
+  //results = Array(matrix.length).fill(0);
+  circles.style('fill', '#eee');
+  var ids = ['direct', 'indirect', 'total']; //'elements',
+  ids.forEach(function(el) {
+    d3.select('#' + el).html("0.00");
+  })
+};
+
+svg.on('click', reset);
 
 var nodes = svg.selectAll(".node")
     .data(force.nodes())
@@ -453,35 +546,46 @@ nodes.on('mouseover', function(d) {
 
   //TODO: maybe differentially color incoming and outgoing connections?
 
-  path.style('opacity', function(l) {
-    //console.log(d);
-    //console.log(l);
-    if (d === l.source || d === l.target)  //d === l.source || d === l.target
-      return 1;
-    else
-      return 0.2;  //0.15
-    });
+  if (click === false) {
+    path.style('opacity', function(l) {
+      //console.log(d);
+      //console.log(l);
+      if (d === l.source || d === l.target)  //d === l.source || d === l.target
+        return 1;
+      else
+        return 0.2;  //0.15
+      });
 
-  //http://www.d3noob.org/2013/01/making-dashed-line-in-d3js.html
-  path.style('stroke-dasharray', function(l) {
-    //console.log(d);
-    //console.log(l);
-    if (d === l.target)  //d === l.source || d === l.target
-      return "3, 3";
-    else
-      return 0;  //0.15
-    });
+    //http://www.d3noob.org/2013/01/making-dashed-line-in-d3js.html
+    path.style('stroke-dasharray', function(l) {
+      //console.log(d);
+      //console.log(l);
+      if (d === l.target)  //d === l.source || d === l.target
+        return "3, 3";
+      else
+        return 0;  //0.15
+      });
+  };
 
 });
 
 nodes.on('mouseout', function(d) {
   //path.style('stroke-width', 0.5);
   //path.style('stroke-width', function(d){return d.impact;});
-  path.style('opacity', 1);
-  path.style('stroke-dasharray', 0);
+  if (click == false) {
+    path.style('opacity', 1);
+    path.style('stroke-dasharray', 0);
+  }
 });
 
 nodes.on('click', function(d) {
+
+  //reset();
+  //Reset path styles
+  path.style('opacity', 0.45);
+  path.style('stroke-dasharray', 0);
+
+  click = true;
 
   //var el = d3.select(this);
   var len = impacts.length; 
@@ -518,8 +622,8 @@ nodes.on('click', function(d) {
   //   .domain([-5,0, 10])
   //   .range(["yellow","white", "red"]);
   var resScale = d3.scale.linear()
-    .domain([0, 10])
-    .range(["#eee", "red"]);
+    .domain([-10, 0, 10])
+    .range(["blue", "#eee", "red"]);   //"red"
 
   // d3.selectAll('circle')
   //   .attr('fill', function(d) {return lookup[d.parentNode.name];});
@@ -536,12 +640,28 @@ nodes.on('click', function(d) {
       });
   })
 
+  d3.event.stopPropagation();
+
 });
 
 
 function updateScores(name, arr, res) {
   //https://stackoverflow.com/questions/1230233/how-to-find-the-sum-of-an-array-of-numbers#16751601
   var direct = arr.reduce((a, b) => a + b, 0);
+  
+  //var direct = math.multiply(arr, matrix);  //Calculate first step, direct effect on neighbors
+  //console.log(direct);  
+  //But you still need to incorporate the effect of actually acting on the node.  
+  //This is a direct effect as well. . . 
+  //Maybe leave this one the same, then the EA network one will have the click spending
+  //1 million or something. 
+  //Because in the other one, the money you spend will be converted to impact on the last step, 
+  //so that could be your direct impact.  sum(Money_Array * Impact_array)
+  //Technically, you should be able to do this for all of the circles even in the ea-network one, 
+  //by multiplying whatever array eventually converts the cell value to impact.  
+
+  //direct = direct.reduce((a, b) => a + b, 0); //Sum that array. 
+
   var total = Object.values(res).reduce((a, b) => a + b, 0);
   //var direct = res[name];
   var indirect = total - direct;
@@ -569,10 +689,20 @@ function updateScores(name, arr, res) {
 
   nodes.append("text")
       .attr("text-anchor", "middle")
-      //.attr("transform", "translate(" + d.x + "," + d.y + 10 + ")")
+      //.attr("transform", "translate(" + d.x + "," + d.y + 10 + ")")  Math.abs(number) < 1e-10
       .text(function(d) {
         return d.name + ': ' + Math.round(res[d.name]*10)/10;
       });
+
+  console.log(res);
+
+  path.style('opacity', function(l) {
+    //console.log(d);
+    if (Math.abs(res[l.source.name]) > 1e-10)  //Check for near zero numbers //d === l.source || d === l.target
+      return 1;
+    else
+      return 0.05;  //0.15
+  });
 
 }
 
