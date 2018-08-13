@@ -98,6 +98,8 @@ table {
 </div>
 
 <script type="text/javascript">
+// Source: http://jsfiddle.net/bswv1mqe/6/
+// https://stackoverflow.com/questions/27785505
 
 // GLOBALS
 // Initial values from spreadsheet, any zero values filled in with 0.001 to 
@@ -148,7 +150,8 @@ var index = {
 }; 
 
 // The Initial Matrix
-// Source: Matrix from this google sheet: https://docs.google.com/spreadsheets/d/10xjbuI_yVhTf9Cy7zP2LKiB2FBe3ls0HFgK4Jmm8vEw/edit#gid=884334220
+// Source: Matrix from this google sheet: 
+// https://docs.google.com/spreadsheets/d/10xjbuI_yVhTf9Cy7zP2LKiB2FBe3ls0HFgK4Jmm8vEw/edit#gid=884334220
 var matrix = [
   [0,0.95,0.95,0.95,0,0,0,0.95,0.95,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.95,0,0,0,0,0,0,0,0,0,0,0,0.5,0,0,0],
   [0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -371,6 +374,7 @@ nodes.on('click', function(d) {
   }
 });
 
+// Helper Functions
 function showTooltip(d) {
   tooltip.html(
     "<b>Node: </b>" + index[d.index].name + '<br>' +
