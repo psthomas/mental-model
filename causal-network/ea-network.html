@@ -26,19 +26,6 @@ body {
   opacity: 0.45;
 }
 
-/*#licensing {
-  fill: green;
-}
-
-.link.licensing {
-  stroke: green;
-}
-
-.link.resolved {
-  stroke-dasharray: 0,2 1;
-}*/
-
-
 circle {
   fill: #ddd;  /*#ccc; ddd*/
   stroke: #333;
@@ -49,7 +36,6 @@ circle {
 text {
   font: 10px sans-serif;
   pointer-events: none;
-  /*text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;*/
 }
 
 table {
@@ -73,10 +59,6 @@ table {
   stroke-width: 5px;
 }
 
-#holder {
-  /*border: 1px solid #aaa;*/
-}
-
 #score {
   display:inline-block;
   /*position:absolute;*/
@@ -89,72 +71,22 @@ table {
 
 #reset {
   display:inline-block;
-  /*text-align:center;*/
-/*  margin-left:auto;
-  margin-right:auto;*/
-  /*margin: 0 auto;*/
-/*  display:inline-block;*/
-/*  position:absolute;
-  bottom:0;*/
 }
-
-
-
-
-
 
 
 </style>
 </head>
-
 <body>
 
-
-
-
-
-<!-- <table>
-  <tbody> -->
-<!--     <tr>
-      <th> <u>Impacts</u> </th>
-      <td id="elements"></td>
-    </tr> -->
-<!--     <tr>
-      <th> Direct: </th>
-      <td id="direct">0.00</td>
-    </tr>
-    <tr>
-      <th> Indirect: </th>
-      <td id="indirect">0.00</td>
-    </tr> -->
-<!--     <tr>
-      <th> Total Impact: </th>
-      <td id="total">0.00</td>
-    </tr> -->
-<!--     <tr>
-      <th></th>
-      <td>(Click to Reset)</td>
-    </tr> -->
-<!--   </tbody>
-</table> -->
 
 <div id='wrapper'>
 <div id="score">
 <p><b>Total Impact:</b> <span id="total">0.00</span> QALYs <br>
 <!--   (click to reset) -->
 </p>
-<!-- <p>(click to reset)</p> -->
 </div>
 </div>
 
-
-<!-- <div id='wrapper'>
-<div id='reset'>
-<p>(click to reset)</p>
-</div>
-</div> -->
-
-<!-- <button id='reset'>Reset</button> -->
 
 <div id="holder">
 </div>
@@ -167,145 +99,9 @@ table {
 
 <script type="text/javascript">
 
-//Source: http://jsfiddle.net/bswv1mqe/6/
-// https://stackoverflow.com/questions/27785505
-
-//Writing: 
-//While my previous post saw the world as a set of detached causes that could absorb money, 
-//this one views it as more of a network.  Thinking of the world as a network is especially
-//important when you expect the largest impacts of your actions to be indirect, or you're considering
-//some type of upstream intervention like "Increasing the rate of economic growth", or 
-//"strengthening healthcare systems", or "improving educational outcomes", or 
-//"campaigning for a politician".  
-
-//For demonstration purposes, have the cell with the smallest direct effect
-//have the largest indirect one.  
-
-// You have one click.  The direct impact of your click is proportional to the size of
-// the circle.  But the circles are also connected to a network, with the secondary effects
-// proportional to the size of the edges connecting the circles (to see the edge direction, hover over
-// a circle). This is called a cyclic graph, so there can also be looping feedback between circles, 
-// which eventually decays.
-
-// Show vis here  
-
-// It may seem like selecting circle D is the best approach to start because of it's large direct
-// effect, but circles B and E outperform it because of their connections to the network. 
-// Even though circle E has the smallest direct impact of 1, it has larger, diffuse effect on others.  
-// So the point is that if you're working in a complex system, pay close attention to potential 
-// indirect effects of your actions because they might be more important.  
-
-// I chose some values for the network to demonstrate a point.   
-
-// How it works
-// Go over the math from the EA post, give credit to them.  
-// Math is stolen from this post: http://effective-altruism.com/ea/1h9/test/
-
-// Also show the matrix 
-
-//Each row in this matrix represents the outgoing
-//impact from a node on the others.  So for row a, 
-//a 1 unit increase in a causes a 0.1 increase in e.  
-//So if a is 5, e is 5*0.1 = 0.5, then the outgoing 
-//impacts from e are calculated, which is 0.5*1.5 = 0.75 for
-//a, b, c, d. These then propagate out.  Some of it returns to a ()
-//and cycles out again (e.g. a->e = 0.75*0.1 = 0.075 again). 
-//This infinite loop has a mathematical solution: 
-//impact_vector*(I-M)^-1 is the total sum.
-// As long as the feedback loop decays over time: 
-// http://effective-altruism.com/ea/1h9/test/
-// If they both have a feedback of > 1, it will continue indefinitely. 
-
-// So if there is a loop anywhere, as long as the amount that returns
-// to the starting point is lower than it was initially, it's not
-// infinite.  I'm sure there's something hand-wavey here I could say about
-// entropy closed in thermodynamic systems . . .  
-
-//Conclusion
-
-//I'm not interested in using models like this to actually make concrete predictions. 
-//Instead, I just want to communicate general ideas to be aware of when making decisions about 
-//prioritization.  Providing different mental models to switch between depending on the context.
-
-
-//TODO: potentially implement a breadth first search that highlights all child branches
-// beyond immediate one
-//TODO: Add possible negative effects.  Will that work with current matrix multiplication?
-// would also be interesting if you had one with negative direct effects, but large positive
-// indirect effects. 
-
-
-// TODO: add direct effect into results
-// TODO: figure out mouseover/mouseout 
-
-
-//Globals
-//var order = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-// var order = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
-// //var impacts = [3, 4, 1, 6, 3, 2, 1]
-// var impacts = [3, 4, 2, 6, 1, 2, 2]
-// var lookup = {};
-// for (var i = 0; i< order.length; i++) {
-//   lookup[order[i]] = impacts[i];
-// }
-
-//all rows of matrix, with column/row headers of order
-// Maybe, have the diagonal be the impacts of the click, then 
-// just ignore the diagonal when building the links
-// var matrix = [
-//   [0, 3, 5, 0, 1],
-//   [0, 0, 0, 6, 0],
-//   [5, 0, 0, 2, 0],
-//   [0, 0, 3, 0, 0],
-//   [1, 2, 0, 0, 0]
-// ]
-// var matrix = [
-//   [0, 0, 0, 0, 1],
-//   [0, 0, 0, 6, 0],
-//   [0, 0, 0, 2, 0],
-//   [0, 0, 3, 0, 0],
-//   [0, 0, 2, 0, 0]
-// ]
-//I guess fractions are what's needed?
-// var matrix = [
-// //  a,   b,   c,   d,   e,   f,   g
-//   [0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0], //a
-//   [0.0, 0.0, 0.0, 0.6, 0.0, 0.2, 0.0], //b
-//   [0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0], //c
-//   [0.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0], //d
-//   [0.2, 0.3, 0.2, 0.5, 0.0, 0.0, 0.0], //e
-//   [0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0], //f
-//   [0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0]  //g
-// ]
-//Each row in this matrix represents the outgoing
-//impact from a node on the others.  So for row a, 
-//a 1 unit increase in a causes a 0.1 increase in e.  
-//So if a is 5, e is 5*0.1 = 0.5, then the outgoing 
-//impacts from e are calculated, which is 0.5*1.5 = 0.75 for
-//a, b, c, d. These then propagate out.  Some of it returns to a ()
-//and cycles out again (e.g. a->e = 0.75*0.1 = 0.075 again). 
-//This infinite loop has a mathematical solution: 
-//impact_vector*(I-M)^-1 is the total sum.
-// As long as the feedback loop decays over time: 
-// http://effective-altruism.com/ea/1h9/test/
-// If they both have a feedback of > 1, it will continue indefinitely.  
-
-//[2] Subject to the some conditions, which in our case are equivalent to requiring feedback 
-//loops (such as the one above) to decay over time instead of growing larger.
-// var matrix = [
-// //  a,   b,   c,   d,   e,   f,   g
-//   [0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0], //a
-//   [0.0, 0.0, 0.0, 0.6, 0.0, 0.2, 0.0], //b
-//   [0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0], //c
-//   [0.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0], //d
-//   [1.5, 1.5, 1.5, 1.5, 0.0, 0.0, 0.0], //e
-//   [0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0], //f
-//   [0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0]  //g
-// ]
-
-
-//Initial values from spreadsheet, any zero values filled in with 0.001 to 
-//allow calculation of percentage change. . . 
+// GLOBALS
+// Initial values from spreadsheet, any zero values filled in with 0.001 to 
+// allow calculation of percentage change.
 var index = {
   0 : {'good':  1, 'type': 'E', 'click': 0, 'initial': 1000.00, 'name': 'EA Movement Size (dedicated ivy league grads equivalents)'},
   1 : {'good':  1, 'type': 'E', 'click': 0, 'initial': 4.00, 'name': 'Far Future (mil$)'},
@@ -351,174 +147,77 @@ var index = {
   41 :{'good':  1, 'type': 'D', 'click': 0, 'initial': 0.001, 'name': 'Expected Cumulative change in QALYs (2050)'}
 }; 
 
-
-
-
-//Source: Effective Matrix from this google sheet: https://docs.google.com/spreadsheets/d/10xjbuI_yVhTf9Cy7zP2LKiB2FBe3ls0HFgK4Jmm8vEw/edit#gid=884334220
-// Is this the wrong matrix?  Is this the effects after running the simulation with set values?
-// Nope, this is right, it's the (I-M)^-1 - I, before the vector is multiplied.  
-// But then I only need to multiply the vector, I don't need to use the solving equation below.  
-// Note, this excludes the direct effect of the action, so they need to be added back in
-// TODO: add back in direct results.  
-// NOTE: I don't think it's accurate to use this for the graph, because this is (I-M)^-1 - I, not the 
-// original graph.  It's the effective graph, which isn't the same thing.
-// Yeah, this is the eventual effects of actions cascading through, but not their direct initial links.    
-// var matrix = [
-// [0.1049723757,1.049723757,1.049723757,1.049723757,1.049723757,1.186928314,1.049723757,1.049723757,1.049723757,0.1627071823,0.03831491713,0.2032265193,1.049723757,1.060220994,0.00881558011,0.1684349281,0.2889135967,0.9972375691,0.00004137935213,-0.00003168044372,-0.001773545106,-0.01176877914,-0.00002315319285,-0.03560784943,-0.03560784943,0,1.049723757,0.03464088398,0.0000331034817,0.001477422381,0.001559752068,0.005131758044,-0.01086617608,0.00006058762901,0.001330751396,0.0003008461484,-0.0358017552,-0.05737188302,1.654696133,0.0004343344566,0.004513015298,10400447.86],
-// [0,0,0,0,1,1.099585062,1,0,0,0,0,0,0,0,0,0.157966805,0.1739834025,0,0,0,0,0,0,-0.03298755187,-0.03298755187,0,0,0,0,0.001514108028,0.002468156163,0,0.0007051874752,0,0.001057781213,0,-0.02848285256,-0.04378248262,0,0.0003059726757,0.003525937376,8032733.171],
-// [0,0,0,0,0,0,0,0,0,0.155,0.0365,0.1936,0,0,0,0,0,0,0.00003941927755,0.000003153542204,0.000004730313307,0.000001576771102,0.000002365156653,0,0,0,0,0,0.00003153542204,0.0005318634903,0.000003721255129,0.0000009933657944,0.000001333519369,0,0.000002000279053,0,0.000003108293125,0.000002072195417,0,0.0000314581998,-0.000001216258668,5515.763058],
-// [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0.008398,0,0,0,0,-0.00003333333333,-0.001694265388,-0.01121288743,-0.00002442161932,0,0,0,0,0,0,-0.0009710766859,-0.001527689533,0.004834056403,-0.01121274953,0.00005714622642,-0.00002421476935,0.0002837579618,-0.000005675123489,-0.000003783415659,0,0.0000003501761382,0.0000006894998983,2286.223497],
-// [0,0,0,0,0,0.04045643154,0,0,0,0,0,0,0,0,0,0.07323651452,0.06161825726,0,0,0,0,0,0,-0.001213692946,-0.001213692946,0,0,0,0,0.0002216360883,0.0003612902561,0,0.0001032257875,0,0.0001548386812,0,-0.003807833355,-0.007131916566,0,0.00004984953726,0.0005161289373,1175836.549],
-// [0,0,0,0,0,0.03734439834,0,0,0,0,0,0,0,0,0,0.08298755187,0.04149377593,0,0,0,0,0,0,-0.03112033195,-0.03112033195,0,0,0,0,0.001059863151,0.001727688989,0,0.0004936254253,0,0.000740438138,0,-0.02074069396,-0.02904151382,0,0.000202937309,0.002468127127,5622847.069],
-// [0,0,0,0,0,0.02178423237,0,0,0,0,0,0,0,0,0,0.001742738589,0.07087136929,0,0,0,0,0,0,-0.000653526971,-0.000653526971,0,0,0,0,0.0002326087891,0.0003791769186,0,0.0001083362625,0,0.0001625043937,0,-0.003934325245,-0.007609052238,0,0.0000531858294,0.0005416813123,1234049.554],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.95,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.95,0,0,0],
-// [0.1104972376,0.1049723757,0.1049723757,0.1049723757,0.1049723757,0.1186928314,0.1049723757,0.1049723757,0.1049723757,0.01627071823,0.003831491713,0.02032265193,0.1049723757,0.1060220994,0.000881558011,0.01684349281,0.02889135967,0.09972375691,0.000004137935213,-0.000003168044372,-0.0001773545106,-0.001176877914,-0.000002315319285,-0.003560784943,-0.003560784943,0,0.1049723757,0.003464088398,0.00000331034817,0.0001477422381,0.0001559752068,0.0005131758044,-0.001086617608,0.000006058762901,0.0001330751396,0.00003008461484,-0.00358017552,-0.005737188302,0.1654696133,0.00004343344566,0.0004513015298,1040044.786],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0000001884086496,0.0000003071260181,0,0.0000000877502909,0,0.0000001316254363,0,0.000000001101089511,0.0000000007340596737,0,0.00007499993206,0.0000004387514545,19117.20349],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0008431452962,0.00006745162369,0.0001011774355,0.00003372581185,0.00005058871777,0,0,0,0,0,0.0006745162369,0.01137548949,0.00007857630611,0.00002124726146,0.00002823194092,0,0.00004234791138,0,0.00006648013337,0.00004432008891,0,0.00042421574,-0.00002746935464,58983.81137],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.00004465120994,0.000003572096795,0.000005358145193,0.000001786048398,0.000002679072596,0,0,0,0,0,0.00003572096795,0.0006024221111,0.000004161236689,0.00000112521049,0.000001495104494,0,0.00000224265674,0,0.000003520648701,0.000002347099134,0,0.00002246557758,-0.00000145471952,2064.501046],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.00003333333333,-0.001666666667,-0.01111111111,0,0,0,0,0,0,0,-0.0009861907649,-0.001502843172,-0.0005197500001,-0.01111097106,0,0.0000002100694338,0,-0.000005763452522,-0.000003842301681,0,0.0000003556263667,0.0000007002314461,2321.806848],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.00002461124594,-0.00000001223241817,0.0053625,-0.000000003494976621,0.00005714622642,-0.000000005242464931,0.0002837579618,0.0000001438319568,0.00000009588797118,0,-0.000000008874964443,-0.0000000174748831,-57.94270378],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.003286344516,-0.01211911357,-0.002908028021,0,0,0,0,0,0,-0.001130884373,-0.002957147986,-0.001035198523,-0.01211895298,0,-0.00290778713,0,-0.000006609064517,-0.000004406043011,0,0.0000004078037587,0.0000008029691902,2662.461641],
-// [0,0,0,0,0,0.4668049793,0,0,0,0,0,0,0,0,0,0.03734439834,0.5186721992,0,0,0,0,0,0,-0.01400414938,-0.01400414938,0,0,0,0,0.001979450296,0.003226713258,0,0.0009219180737,0,0.001382877111,0,-0.03432453137,-0.06306282728,0,0.0004407799742,0.004609590369,10501493.79],
-// [0,0,0,0,0,0.3112033195,0,0,0,0,0,0,0,0,0,0.02489626556,0.01244813278,0,0,0,0,0,0,-0.009336099585,-0.009336099585,0,0,0,0,0.003322982702,0.005416813123,0,0.001547660892,0,0.002321491338,0,-0.05620464636,-0.1087007463,0,0.0007597975629,0.007738304461,17629279.34],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.008064516129,0.08064516129,0.1209677419,0.04032258065,0.06048387097,0,0,0,0,0,0.8064516129,13.60053523,0.09394583159,0.02540322581,0.03375410856,0,0.05063116285,0,0.07948364746,0.0529890983,0,0.5071923388,-0.0328423604,46609044.88],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0004367986366,0.0999997829,-0.1575,-0.00000006202859566,0,-0.00000009304289348,0,0.000002552719305,0.00000170181287,0,-0.0000001575122356,-0.0000003101429783,-1028.362972],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01188251334,0.8999940941,0.315,-0.000001687403654,0,-0.000002531105481,0,0.00006944325977,0.00004629550652,0,-0.000004284906325,-0.000008437018269,-27975.2172],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.08697348145,-0.00004322804289,0,0.9999876491,0,-0.0000185263041,0,0.0005082865799,0.0003388577199,0,-0.00003136316452,-0.00006175434699,-204763.2487],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01299603746,-0.000006459362731,0,-0.000001845532209,0,0.9999972317,0,0.00007595086826,0.00005063391217,0,-0.000004686449871,-0.000009227661044,-30596.80728],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.01803014254,-0.02939103856,0,-0.008397439588,0,-0.01259615938,0,0.599894629,-0.00007024730859,0,0.000006501778673,-0.04198719794,-95654551.31],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.01202009503,-0.01959402571,0,-0.005598293059,0,-0.008397439588,0,-0.00007024730859,0.7999531685,0,-0.005595665481,-0.02799146529,-63769700.87],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.004207033259,-0.006857908997,0,-0.001959402571,0,-0.002939103856,0,0.03997541344,0.199983609,0,-0.001398482918,-0.009797012853,-22319395.31],
-// [0,0,0,0,0,0.03112033195,0,0,0,0,0,0,0,0.01,0,0.002489626556,0.1012448133,0,0,0,0,0,0,-0.0009336099585,-0.0009336099585,0,0,0.033,0,0.0003325443826,0.00054168119,0.000053625,0.0001547660543,0.0000005714622642,0.0002321490814,0.000002837579618,-0.005620463198,-0.01087007367,0.1,0.00007597966754,0.0007738302714,1867259.907],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3161592.506],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01008064516,0.0008064516129,0.001209677419,0.0004032258065,0.0006048387097,0,0,0,0,0,0.008064516129,0.1317124612,-0.006058408008,0.0002540322581,-0.001661849292,0,-0.002492773939,0,0.0007697481501,0.0005131654334,0,0.01507347143,-0.01032537549,476197.2803],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.0003048109389,-0.0004968740562,0,-0.0001419640161,0,-0.0002129460241,0,0.005842374481,0.003894916321,0,-0.0003604961439,-0.0007098200803,-2353600.56],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01159646419,-0.000005763739052,0,-0.000001646782586,0,-0.00000247017388,0,0.00006777154398,0.00004518102932,0,-0.000004181755269,-0.000008233912932,-27301.76649],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.004589509732,-0.000002281103622,0,-0.000000651743892,0,-0.0000009776158379,0,0.00002682181012,0.00001788120675,0,-0.000001655005024,-0.00000325871946,-10805.16621],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.08697348145,-0.00004322804289,0,-0.0000123508694,0,-0.0000185263041,0,0.0005082865799,0.0003388577199,0,-0.00003136316452,-0.00006175434699,-204763.2487],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01299603746,-0.000006459362731,0,-0.000001845532209,0,-0.000002768298313,0,0.00007595086826,0.00005063391217,0,-0.000004686449871,-0.000009227661044,-30596.80728],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.03005023757,-0.04898506426,0,-0.01399573265,0,-0.02099359897,0,-0.0001756182715,-0.0001170788477,0,0.00001083629779,-0.06997866323,-159424252.2],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.01502511878,-0.02449253213,0,-0.006997866323,0,-0.01049679949,0,-0.00008780913574,-0.00005853942383,0,-0.006994581851,-0.03498933162,-79712126.09],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.4292891081,0.6997866323,0,0.1999390378,0,0.2999085567,0,0.00250883245,0.001672554967,0,-0.0001548042541,-0.0003048109389,-1010683.152],
-// [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-// ];
-
-//Trying with initial matrix
+// The Initial Matrix
+// Source: Matrix from this google sheet: https://docs.google.com/spreadsheets/d/10xjbuI_yVhTf9Cy7zP2LKiB2FBe3ls0HFgK4Jmm8vEw/edit#gid=884334220
 var matrix = [
-[0,0.95,0.95,0.95,0,0,0,0.95,0.95,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.95,0,0,0,0,0,0,0,0,0,0,0,0.5,0,0,0],
-[0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0.155,0.0365,0.1936,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,1,1,0.008398,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.07,0.025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.08,0,0,0,0,0,0,0,-0.03,-0.03,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.07,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.95,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0.1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.000075,0.0000004388852315,19117.64706],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0008364001338,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20000],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.00004429400026,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.00003333333333,-0.001666666667,-0.01111111111,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0053625,0,0.00005714622642,0,0.0002837579618,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.003286344516,-0.01211911357,-0.002908028021,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0.3,0,0,0,0,0,0,0,0,0,0,0.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0.3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.05,-0.1,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.08,0.12,0.04,0.06,0,0,0,0,0,0.8,13.5,0,0,0,0,0,0,0,0,0,0.5,-0.015,78000000],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.1,-0.1575,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.9,0.315,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.6,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.8,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.04,0.2,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0.01,0,0,0.1,0,0,0,0,0,0,0,0,0,0,0.033,0,0,0,0,0,0,0,0,0,0,0.1,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3161592.506],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01,-0.01,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.005844155844,0.003896103896,0,-0.0003333333333,-0.0001645819618,-1111500],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0116,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.004590909091,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.087,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.013,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.07,-159495000],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.007,-0.035,-79747500],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.4,0.7,0,0.2,0,0.3,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-]
+  [0,0.95,0.95,0.95,0,0,0,0.95,0.95,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.95,0,0,0,0,0,0,0,0,0,0,0,0.5,0,0,0],
+  [0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0.155,0.0365,0.1936,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0.008398,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.07,0.025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.08,0,0,0,0,0,0,0,-0.03,-0.03,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.07,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.95,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0.1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.000075,0.0000004388852315,19117.64706],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0008364001338,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20000],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.00004429400026,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.00003333333333,-0.001666666667,-0.01111111111,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0053625,0,0.00005714622642,0,0.0002837579618,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.003286344516,-0.01211911357,-0.002908028021,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0.3,0,0,0,0,0,0,0,0,0,0,0.5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0.3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.05,-0.1,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.08,0.12,0.04,0.06,0,0,0,0,0,0.8,13.5,0,0,0,0,0,0,0,0,0,0.5,-0.015,78000000],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.1,-0.1575,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.9,0.315,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.6,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.8,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.04,0.2,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0.01,0,0,0.1,0,0,0,0,0,0,0,0,0,0,0.033,0,0,0,0,0,0,0,0,0,0,0.1,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3161592.506],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01,-0.01,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.005844155844,0.003896103896,0,-0.0003333333333,-0.0001645819618,-1111500],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.0116,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.004590909091,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.087,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.013,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.07,-159495000],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-0.007,-0.035,-79747500],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.4,0.7,0,0.2,0,0.3,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+];
 
-
-//var results = Array(matrix.length).fill(0);  //set a global.  Eventually, all these globals will be part of an object?
 var results = false;  
 var click = false;
+var width = 0.95*window.innerWidth,
+  height = 0.8*window.innerHeight;
 
-var order = Array(matrix.length).fill(0).map(function(el,i){return String(i);}); //genCharArray(matrix.length);
-
-//var impacts = [3, 4, 1, 6, 3, 2, 1]
-//var impacts = Array(matrix.length).fill(1);//just use 1 for now  //.map(makeARandomNumber);
-//OK, this is right for Deworming, at a value of 1, as in 1 million.  I just have an issue with the differentials
-//vs. the elasticities, because it seems to be taking different values even though the units are the same.  
+var order = Array(matrix.length).fill(0).map(function(el,i){return String(i);}); 
 
 //This finds the elasticity or differential for each fundable circle that will result in 1
 //million dollars being spent on a click.  
 var impacts = Array(matrix.length).fill(0).map(function (el, i) {
   var row = index[i];
   if (row.type === 'E') {
-    return 100*(1/row.initial);  //Find the percentage, times initial that will fund 1 million
+    //Find the percentage, times initial that will result in 1 million
+    return 100*(1/row.initial);  
   } else {
     return 1;
   }
 });
 
-
-
-
-function genCharArray(len) {
-    var a = [];
-    var start = 65;  //'A'
-    var end = start+len;
-    for (var i = start; i < end; ++i) {
-        a.push(String.fromCharCode(i));
-    }
-    return a;
-}
-
-function makeARandomNumber(){
-    return Math.floor(Math.random() * 9) + 1;  //+ 1, no zeros
-}
-
-
-
-// var order = ['a', 'b', 'c']
-// var impacts = [1800,0,0]
-// var matrix = [[0,1/3,0],[0,0,1/600],[0,0,0]];
-
-
 //Then build the links list from the matrix by iterating
 //over the rows and columns of the matrix:
 var links = [];
-//var points = [];
 for (var i=0; i<matrix.length; i++) {
   for (var j=0; j<matrix[i].length; j++) {
-    // if (i === j) {
-    //   //Don't connect circles to themselves,
-    //   //diagonal is their individual impacts
-    //   //continue;
-    //   //It's a node:
-    //   // var point = {index:order[i], impact:matrix[i][j]};
-    //   // points.push(point);
-    //   continue;  //Don't execute rest of logic
-    // } else if (matrix[i][j] !== 0) {
-    //   var edge = {source: order[i], target: order[j], impact: matrix[i][j]}
-    //   links.push(edge);
-    // }
     if (matrix[i][j] !== 0) {
       var edge = {source: order[i], target: order[j], impact: matrix[i][j]}
       links.push(edge);
@@ -526,16 +225,12 @@ for (var i=0; i<matrix.length; i++) {
   }
 }
 
-
-var points = {};
-//https://stackoverflow.com/questions/17181421/uncaught-typeerror-cannot-call-method-push-of-undefined-d3-force-layout#17186156
-
 // Compute the distinct nodes from the links.
+// https://stackoverflow.com/questions/17181421
+var points = {};
 links.forEach(function(link) {
   link.source = points[link.source] || (points[link.source] = {name: link.source});
   link.target = points[link.target] || (points[link.target] = {name: link.target});
-  // link.source = nodes[link.source] || (nodes[link.source] = {name: link.source});
-  // link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
 });
 
 //Add the impacts to the points:
@@ -543,90 +238,36 @@ for (var i=0; i<impacts.length; i++) {
   points[order[i]].impact = impacts[i];
 }
 
-// points.forEach(function(point) {
-//   points[point.name].impact = lookup[point.name]; 
-// })
-
-// var width = 960,
-//   height = 800;
-
-// var width = 700,
-//   height = 450;
-var width = 0.95*window.innerWidth,
-  height = 0.8*window.innerHeight;
-
-
-
-/////End Globals
-
+//Build force layout
 var force = d3.layout.force()
-    //.nodes(d3.values(nodes))
     .nodes(d3.values(points))
-    //.nodes(points)
     .links(links)
     .size([width, height])
-    // .linkDistance(90) //60
-    // .charge(-1500)  //-300  -1500
     .linkDistance(100) //60  300 250  200
     .charge(-200)  //-300  -1500 -1000
     .on("tick", tick)
     .start();
 
-// force.start();
-//for (var i = 0; i < impacts.length; ++i) force.tick();
-//force.stop();
-
-//var svg = d3.select("body").append("svg")
 var svg = d3.select("#holder").append("svg")
     .attr("width", width)
     .attr("height", height);
 
 
-var numFormat = d3.format("0.2g");//d3.format(".2s");
-
-var thsdFormat = d3.format(",.4r");  //",.2r"
-
+var numFormat = d3.format("0.2g");
+var thsdFormat = d3.format(",.4r"); 
 var resFormat = d3.format(",.5r");
 
-// var color = d3.scale.linear()
-//     //.domain(d3.extent(links, function(d) {return d.impact}))
-//     .domain(d3.extent(impacts))
-//     .range(["white", "green"]);
-
-var colorScale = d3.scale.linear()
-    //.domain(d3.extent(links, function(d) {return d.impact}))
-    .domain(d3.extent(impacts))
-    .range(["white", "green"]);
-
-var circleScale = d3.scale.linear()
-    //.domain(d3.extent(links, function(d) {return d.impact}))
-    .domain(d3.extent(impacts))
-    .range([15, 40]);  //15,40
 
 //var resScale = d3.scale.linear()
-//var resScale = d3.scale.log()
-//var resScale = d3.scale.sqrt()
 var resScale = d3.scale.pow()
   .exponent(0.2)  //0.3
-  //.domain([-1, 0, 1])
   .domain([-10, 0, 10])  //[-10, 0, 10]
-  .range(["blue", "#fff", "red"]);   //["blue", "#eee", "red"]
+  .range(["blue", "#fff", "red"]);   //["blue", "#eee", "green"]
   //.range(["rgb(49, 130, 189)", "#eee", "rgb(239, 59, 44)"]); 
-  //.range(["blue", "#eee", "green"]); 
-  //.range(["LightBlue", "#eee", "LightGreen"]);
-  //.range(["red", "#eee", "green"]);
-
-//Note, the reason all of them are so large is that one of them is extremely small
-//try log scale? 
-var arcScale = d3.scale.linear()
-//var arcScale = d3.scale.log()
-    .domain(d3.extent(links, function(d) {return d.impact}))
-    .range([0.25, 1]);
 
 // Per-type markers, as they don't inherit styles.
-// https://stackoverflow.com/questions/28050434/introducing-arrowdirected-in-force-directed-graph-d3
+// https://stackoverflow.com/questions/28050434
 svg.append("defs").selectAll("marker")
-    //.data(["suit", "licensing", "resolved"])
     .data(["end"])
   .enter().append("marker")
     .attr("id", function(d) { return d; })
@@ -643,15 +284,8 @@ var path = svg.append("g").selectAll("path")
     .data(force.links())
   .enter().append("path")
     .attr("class", "link")
-    // You could use stroke width and marker from the start:
-    // Then just define a linear scale to go form impact > stroke-width in pixels
-    .style("stroke-width", function(d) { return arcScale(d.impact); });
-    //.attr("marker-end", "url(#end)" ); //function(d) { return "url(#end)"; });
-    //.style("stroke-width", 5);
-    // Original
-    // .attr("class", function(d) { return "link " + d.type; })
-    // .attr("marker-end", function(d) { return "url(#" + d.type + ")"; });
-
+    //.style("stroke-width", function(d) { return arcScale(d.impact); }); 
+    .style("stroke-width", 1); 
 
 var nodes = svg.selectAll(".node")
     .data(force.nodes())
@@ -660,19 +294,84 @@ var nodes = svg.selectAll(".node")
     .attr("class","node")
     .call(force.drag);
 
-
 var tooltip = d3.select("body")
     .append("div")
     .style("position", "absolute")
     .style("z-index", "10")
     .style("visibility", "hidden")
     .attr("class", "tooltip");
-    //.text("a simple tooltip");
 
-//var circles = nodes.append("circle")
+var circles = nodes.append("circle")
+  .attr("r", 15)
+  .style("stroke-width", function(d) {return index[d.index].click ? 2 : 1; })
+  .style("cursor", function(d) {return index[d.index].click ? "pointer": "cursor"; })
+  .on("mouseover", function(d){
+    showTooltip(d);
+  })
+  .on("mousemove", function(){return tooltip.style("top",
+    (d3.event.pageY-30)+"px").style("left",(d3.event.pageX+20)+"px");})  //-30, +20
+  .on("mouseout", function(){return tooltip.style("visibility", "hidden");}); 
+ 
+var texts = nodes.append("text")
+    .attr("text-anchor", "middle")
+    .text(function(d) {
+      return d.name;
+    });
+
+svg.on('click', reset);
+
+nodes.on('mouseover', function(d) {
+  if (click === false) {
+    path.style('opacity', function(l) {
+      if (d === l.source || d === l.target)
+        return 1;
+      else
+        return 0.05;  //0.15
+      });
+    //http://www.d3noob.org/2013/01/making-dashed-line-in-d3js.html
+    path.style('stroke-dasharray', function(l) {
+      if (d === l.target) 
+        return "3, 3";
+      else
+        return 0;  //0.15
+      });
+  }
+});
+
+nodes.on('mouseout', function(d) {
+  if (click === false) {
+    path.style('opacity', 0.45);
+    path.style('stroke-dasharray', 0);
+  }
+});
+
+nodes.on('click', function(d) {
+  //If it's a clickable node
+  if (index[d.index].click) {
+    //Reset path styles
+    //reset();
+    path.style('opacity', 0.45);
+    path.style('stroke-dasharray', 0);
+
+    click = true; //Set global 
+    var loc = order.indexOf(d.name);
+    var arr = Array(impacts.length).fill(0); 
+    arr[loc] = impacts[loc];
+
+    results = solve(arr, matrix);  //Sets global
+    updateScores(d.name, arr, results);
+
+    showTooltip(d);
+    // Prevent click from triggering the svg reset
+    d3.event.stopPropagation(); 
+
+  } else {
+    //Don't register click for reset
+    d3.event.stopPropagation();
+  }
+});
 
 function showTooltip(d) {
-  //"<b>Numerical Change: </b>" +  numFormat(results ? results[d.index].numericalChange: 0) + '<br>' +
   tooltip.html(
     "<b>Node: </b>" + index[d.index].name + '<br>' +
     "<b>Numerical Change: </b>" +  resFormat(results ? results[d.index].numericalChange: 0) + '<br>' +
@@ -681,284 +380,56 @@ function showTooltip(d) {
   return tooltip.style("visibility", "visible");
 }
 
-
-var circles = nodes.append("circle")
-  //.attr("r", function(d){ d.radius = d.name.length*5; return d.radius; }
-  .attr("r", 15)
-  //.attr("r", function(d){return circleScale(d.impact); })
-  //.style("stroke", function(d) {return index[d.index].click ? "#000" : "#333" })
-  // .each(function (d) {
-  //   if (index[d.index].click) {
-  //     d.style("stroke-width", 2);
-  //     d.style("curosor", "pointer");
-  //   }
-  // })
-  .style("stroke-width", function(d) {return index[d.index].click ? 2 : 1; })
-  .style("cursor", function(d) {return index[d.index].click ? "pointer": "cursor"; })
-  //.attr("fill", function(d){return color(d.impact);});
-  .on("mouseover", function(d){
-    //console.log(d);
-    // tooltip.html(
-    //   "<b>Node: </b>" + index[d.index].name + '<br>' +
-    //   "<b>Numerical Change: </b>" +  numFormat(results ? results[d.index].numericalChange: 0) + '<br>' +
-    //   "<b>Percent Change: </b>" + numFormat(results ? results[d.index].percentChange: 0)
-    // );
-    // return tooltip.style("visibility", "visible");
-    showTooltip(d);
-  })
-  .on("mousemove", function(){return tooltip.style("top",
-    // (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
-    (d3.event.pageY-30)+"px").style("left",(d3.event.pageX+20)+"px");})
-  .on("mouseout", function(){return tooltip.style("visibility", "hidden");}); 
- 
-
-var texts = nodes.append("text")
-    .attr("text-anchor", "middle")
-    //.attr("transform", "translate(" + d.x + "," + d.y + 10 + ")")
-    .text(function(d) {
-      return d.name;
-    });
-
-
-
-// d3.select('#reset').on('click', function(d) {
-
-//   d3.selectAll("text").remove();
-
-//   nodes.append("text")
-//       .attr("text-anchor", "middle")
-//       //.attr("transform", "translate(" + d.x + "," + d.y + 10 + ")")
-//       .text(function(d) {
-//         return d.name;
-//       });
-
-//   var ids = ['direct', 'indirect', 'total']; //'elements',
-//   ids.forEach(function(el) {
-//     d3.select('#' + el).html("");
-//   });
-
-//   circles.style('fill', '#ddd');
-
-// })
-
-// d3.select('#reset').on('click', function() {
-//   path.style('opacity', 0.45);
-//   //path.style('stroke-dasharray', 0);
-//   results = Array(matrix.length).fill(0);
-//   circles.style('fill', '#eee');
-
-// });
-
-
-
 function reset() {
   click = false; //set global
   results = false;
   path.style('opacity', 0.45);
   path.style('stroke-dasharray', 0);
-  //results = Array(matrix.length).fill(0);
   results = false;
   circles.style('fill', '#eee');
   d3.select("#total").html('0.00')
 }
 
-svg.on('click', reset);
+function updateScores(name, arr, res) {
+  var total = res[41].numericalChange;  //The 41st node is the QALY sum.  
+  d3.select('#total').html(thsdFormat(total));  
 
-// svg.on('click', function() {
-//   click = false; //set global
-//   results = false;
-//   path.style('opacity', 0.45);
-//   path.style('stroke-dasharray', 0);
-//   //results = Array(matrix.length).fill(0);
-//   results = false;
-//   circles.style('fill', '#eee');
-//   d3.select("#total").html('0.00')
-// });
+  path.style('opacity', function(l) {
+    if (Math.abs(res[l.source.index].numericalChange) > 1e-10) //Handles near zero values
+      return 1;
+    else
+      return 0.05;  //0.15
+  });
 
+  nodes.each(function(d) {
+    var percentChange = res[d.index].percentChange;
+    var mult = index[d.index].good;
+    //Adjust value for whether + or - is directly considered "good"
+    var num = percentChange*mult;
 
-
-
-// Use elliptical arc path segments to doubly-encode directionality.
-nodes.on('mouseover', function(d) {
-  // path.style('stroke-width', function(l) {
-  //   if (d === l.source)  //d === l.source || d === l.target
-  //     //return 4;
-  //     return l.impact;
-  //   else
-  //     return 0.5;
-  //   });
-
-  //TODO: maybe differentially color incoming and outgoing connections?
-
-  //if (Object.values(results).reduce((a, b) => a + b, 0) === 0) {
-  if (click === false) {
-
-    path.style('opacity', function(l) {
-      //console.log(d);
-      //console.log(l);
-      if (d === l.source || d === l.target)  //d === l.source || d === l.target
-        return 1;
-      else
-        return 0.05;  //0.15
+    d3.select(this)
+      .selectAll("circle")
+      .transition()
+      .duration(750)
+      .style('fill', function(){
+        return resScale(num); 
       });
+  })
 
-    //http://www.d3noob.org/2013/01/making-dashed-line-in-d3js.html
-    path.style('stroke-dasharray', function(l) {
-      //console.log(d);
-      //console.log(l);
-      if (d === l.target)  //d === l.source || d === l.target
-        return "3, 3";
-      else
-        return 0;  //0.15
-      });
-
-  }
-
-  // //tooltip.style("visibility", "visible");
-
-});
-
-
-
-
-nodes.on('mouseout', function(d) {
-  //path.style('stroke-width', 0.5);
-  //path.style('stroke-width', function(d){return d.impact;});
-
-  //if (Object.values(results).reduce((a, b) => a + b, 0) === 0) {
-  if (click === false) {
-    path.style('opacity', 0.45);
-    path.style('stroke-dasharray', 0);
-  }
-
-  // path.style('opacity', 0.45);
-  // path.style('stroke-dasharray', 0);
-
-  // path.style('opacity', function(l) {
-  //   //console.log(d);
-  //   //console.log(l);
-  //   if (res[l.source.index] !== 0)  //d === l.source || d === l.target
-  //     return 1;
-  //   else
-  //     return 0.05;  //0.15
-  // });
-
-});
-
-nodes.on('click', function(d) {
-
-
-
-  // nodes.mouseover = null;
-  // nodes.mouseout = null;
-
-  //If it's a clickable node
-  if (index[d.index].click) {
-
-    //reset();
-    //Reset path styles
-    path.style('opacity', 0.45);
-    path.style('stroke-dasharray', 0);
-
-    click = true; //Set global click value
-
-    //var el = d3.select(this);
-    var len = impacts.length; 
-    var loc = order.indexOf(d.name);
-
-    //Build the array to multiply
-    // var arr = math.zeros(len);
-    // math.subset(arr, math.index(0, loc), impacts[loc]); //Set value
-    // var arr = [];
-    // for (var i=0; i<len; i++) {
-    //   if (i === loc) { arr[i] = impacts[loc]; } 
-    //   else { arr[i] = 0; }
-    // }
-    var arr = Array(impacts.length).fill(0); //[];
-    arr[loc] = impacts[loc];
-
-
-    results = solve(arr, matrix);  //Sets global
-    //results[d.name] = impacts[loc];  //Adds the direct click impact back in //Not needed, you have your own matrix w/o -I now.  
-    // console.log(res);
-    // console.log(arr);
-    //Then use this array to color elements, both nodes and lines inbetween.  
-    //Actually, how will this work?  I guess the matrix will just refer to nodes, 
-    //so just those will be colored?  
-
-    updateScores(d.name, arr, results);  //Maybe pull out style updates from this function
-
-    d3.event.stopPropagation(); // Prevent click from triggering svg reset.  
-
-    //Update tooltip with new data
-    //tooltip.style("visibility", "hidden");
-    //tooltip.style("visibility", "visible");
-    // tooltip.html(
-    //   "<b>Node: </b>" + index[d.index].name + '<br>' +
-    //   "<b>Numerical Change: </b>" +  numFormat(results ? results[d.index].numericalChange: 0) + '<br>' +
-    //   "<b>Percent Change: </b>" + numFormat(results ? results[d.index].percentChange: 0)
-    // );
-    showTooltip(d);
-  } else {
-    //Don't register click for reset
-    d3.event.stopPropagation();
-  }
-
-});
-
-
-// svg.on('click', function() {
-//   path.style('opacity', 0.45);
-//   path.style('stroke-dasharray', 0);
-// });
-
-
-//Ok, this function should work:
-//math.multiply([1800,0,0], math.inv(math.subtract([[1,0,0],[0,1,0],[0,0,1]], [[0,1/3,0],[0,0,1/600],[0,0,0]])))
-// >> [1800, 600, 1]
-// and math.multiply([0,20], math.inv(math.subtract([[1,0],[0,1]], [[0,1],[0.5,0]])))
-// >> [20, 40]
+}
 
 function solve(arr, matrix) {
-  //Get ordered array of results, return it. 
   //http://mathjs.org/docs/datatypes/matrices.html
-
-  //The following has already been done in the spreadsheet
-  //to arrive at the 'Effective Matrix' tab:
-  //https://docs.google.com/spreadsheets/d/10xjbuI_yVhTf9Cy7zP2LKiB2FBe3ls0HFgK4Jmm8vEw/edit#gid=884334220
-  
+  //http://effective-altruism.com/ea/1h6/causal_networks_model_i_introduction_user_guide/
   var len = impacts.length;
-  //Create inverse matrix
-  //var inv = matrix_invert(matrix);
-  // var res = multiply(arr, inv);
   var ident = math.identity(len, len);
-  //var temp = math.subtract(ident, matrix);
-  //var temp = math.inv(math.subtract(ident, matrix));
   var res = math.multiply(arr, math.inv(math.subtract(ident, matrix))).toArray();
-  //console.log(res);
-
-
-
-  /*
-  //Just need to multiply the input array times effective
-  //matrix.
-  //Try adding back in the identity matrix:
-  // var len = impacts.length;
-  // var ident = math.identity(len,len);
-  // matrix = math.add(ident, matrix);  //matrix, ident
-  var res = math.multiply(arr, matrix);
-  // console.log(res);
-  */
-
-  //Maybe just modify index here? 
 
   // Map results to circle values, calculating both percent and numerical changes.  
   var lookup = {};
   for (var i = 0; i<res.length; i++) {
-
     var percentChange;
     var numericalChange;
-
     if (index[i].type === 'D') {
       //If it's a differential, calculate fraction of original
       percentChange = (res[i]/index[i].initial)*100; 
@@ -969,127 +440,14 @@ function solve(arr, matrix) {
     }
     lookup[order[i]] = {'numericalChange': numericalChange, 'percentChange':percentChange};
   }
-
   return lookup; 
 }
 
-
-function updateScores(name, arr, res) {
-  //https://stackoverflow.com/questions/1230233/how-to-find-the-sum-of-an-array-of-numbers#16751601
-  //var direct = arr.reduce((a, b) => a + b, 0);
-
-  //var total = Object.values(res).reduce((a, b) => a + b, 0);
-  // And the total should just be the value of node 41?  The spreadsheet rounds so I think this is right.   
-  //var total = res[41];
-
-  //var direct = res[name];
-  //var indirect = total - direct;
-  // console.log("Direct: " + direct);
-  // console.log("Indirect: " + indirect);
-  // console.log("Total: " + (direct +indirect));
-  // var ks = Object.keys(res);
-  // var vl = Object.values(res);
-  // var str = '';
-  // ks.forEach(function(el,i) {
-  //   str += '&nbsp<b>' + el + ':&nbsp</b>' + Math.round(vl[i]*100)/100;
-  // });
-
-  // var lookup = {
-  //   'direct': direct.toFixed(2), 'indirect': Math.round(indirect*100)/100,
-  //   'total': Math.round(total*100)/100
-  // }  //, 'elements': str Math.round(direct*100)/100
-
-  // var ids = ['direct', 'indirect', 'total']; //'elements',
-  // ids.forEach(function(el) {
-  //   d3.select('#' + el).html(lookup[el]);
-  // })
-
-
-  //var total = Object.values(res).reduce((a, b) => a + b, 0);
-  // And the total should just be the value of node 41?  The spreadsheet rounds so I think this is right.   
-  var total = res[41].numericalChange;
-  d3.select('#total').html(thsdFormat(total));  //thsdFormat(total);
-  //d3.selectAll("text").remove();
-  // nodes.append("text")
-  //     .attr("text-anchor", "middle")
-  //     //.attr("transform", "translate(" + d.x + "," + d.y + 10 + ")")
-  //     .text(function(d) {
-  //       return d.name + ': ' + Math.round(res[d.name]*1000)/1000;
-  //     });
-
-  //Create color scale unique to this solution.  Can't think of how to make 
-  //one global to all solutions.  Something to think about.  
-  // var resScale = d3.scale.linear()
-  //   .domain(d3.extent(Object.values(res)))
-  //   .range(["white", "red"]);
-  // var resScale = d3.scale.linear()
-  //   .domain([-5,0, 10])
-  //   .range(["yellow","white", "red"]);
-  // var resScale = d3.scale.linear()
-  //   .domain([-10, 0, 10])
-  //   .range(["blue", "#eee", "red"]);
-
-  // var resScale = d3.scale.linear()
-  // //var resScale = d3.scale.log()
-  // //var resScale = d3.scale.sqrt()
-  // //var resScale = d3.scale.pow()
-  //   //.exponent(0.35)
-  //   //.domain([-1, 0, 1])
-  //   .domain([-10, 0, 10])
-  //   .range(["blue", "#eee", "red"]);   //["blue", "#eee", "red"]);
-  //   //.range(["blue", "#eee", "green"]); 
-  //   //.range(["LightBlue", "#eee", "LightGreen"]);
-
-  // d3.selectAll('circle')
-  //   .attr('fill', function(d) {return lookup[d.parentNode.name];});
-
-  path.style('opacity', function(l) {
-    //console.log(d);
-    //console.log(l);
-    if (Math.abs(res[l.source.index].numericalChange) > 1e-10) //Handles near zero values //d === l.source || d === l.target
-      return 1;
-    else
-      return 0.05;  //0.15
-  });
-
-  nodes.each(function(d) {
-    //var val = res[d.name];
-    //d.result = val;
-    // var mult = index[d.index].good;
-    // var percentChange = res[d.name];//val;
-    // if (index[d.index].type === 'D') {
-    //   //If it's a differential, calculate fraction of original
-    //   percentChange = (percentChange/index[d.index].initial)*100; 
-    // }
-
-    var percentChange = res[d.index].percentChange;
-    var mult = index[d.index].good;
-    //Adjust value for whether + or - is directly "good"
-    var num = percentChange*mult;
-
-    //TODO: maybe color circle based on percent change?  Difficult to figure out
-    //though, as some initial values are percentages, some are numbers.
-    //but if you know whether it's an elasticity or a differential, you can figure it out.  
-    d3.select(this)
-      .selectAll("circle")
-      .transition()
-      .duration(750)
-      .style('fill', function(){
-        //return num > 0 ? 'red': 'blue';
-        //if (num === 0) {return '#eee'}
-        //else if (num > 0 ) {return 'lightgreen'}  //'red'
-        //else {return 'lightblue'}
-        return resScale(num); 
-      });
-  })
-
-}
-
 function tick() {
+  // Use elliptical arc path segments to doubly-encode directionality.
   path.attr("d", linkArc);
   nodes.attr("transform", transform);
 }
-
 
 function linkArc(d) {
   var dx = d.target.x - d.source.x,
@@ -1102,41 +460,10 @@ function transform(d) {
   return "translate(" + d.x + "," + d.y + ")";
 }
 
-
-//TODO: potentially implement a breadth first search that highlights all child branches
-// beyond immediate node
-// Maybe that will be overly complicated though.  
-//https://stackoverflow.com/questions/5411270/breadth-first-traversal-of-object
-function traverse(state) {
-    var queue = [],
-        next = state;
-    while (next) {
-        var children = getChildren(next, links);
-        if (children) {
-            // $.each(next.possibleMoves, function(i, possibleMove) {
-            //     queue.push(possibleMove);
-            // });
-            next.possibleMoves.forEach(function(i, possibleMove) {
-                queue.push(possibleMove);
-            });
-        }
-        next = queue.shift();
-    }
-}
-
-//Itearates through list of links, 
-function getChildren(el, ls) {
-  var children = [];
-  for (var i=0; i<ls.length; i++) {
-    if (ls[i].source === el.name) {
-      children.push(ls[i]);
-    }
-  }
-  return children;
-}
-
+//Works, but not needed:  
+//force.start();
+// for (var i = 0; i < 1000; ++i) force.tick();
+// force.stop();
 
 </script>
-
-
 </body>
