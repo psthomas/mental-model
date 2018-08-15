@@ -280,11 +280,15 @@ function reset(){
   results = false;
   path.style('opacity', 1);
   path.style('stroke-dasharray', 0);
-  circles.style('fill', '#eee');
+  circles.style('fill', '#ddd');
   var ids = ['direct', 'indirect', 'total'];
   ids.forEach(function(el) {
     d3.select('#' + el).html("0.00");
   })
+
+  d3.selectAll("text").text(function(d) {
+      return d.name;
+    });
 };
 
 function solve(arr, matrix) {
