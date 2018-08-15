@@ -15,8 +15,8 @@
 <style type="text/css">
 
 body {
-  font-family: serif;
-  font-size: 16px;
+  font-family: "Trebuchet MS", sans-serif;/*serif;*/
+  font-size: 15px;
 }
 
 .link {
@@ -47,10 +47,11 @@ table {
 
 .tooltip {
   /*background-color:#eee;*/
-  background: rgba(240, 240, 240, 0.75); /*0.9*/
+  background: rgba(240, 240, 240, 0.8); /*0.9*/
   padding: 8px 10px;
   border: 1px solid #333;
-  font: 13px sans-serif;
+  /*font: 13px sans-serif;*/
+  font-size: 13px;
   border-radius: 5px;
   max-width:500px;
 }
@@ -442,7 +443,7 @@ function solve(arr, matrix) {
       percentChange = res[i];
       numericalChange = (res[i]/100)*index[i].initial;
     }
-    lookup[order[i]] = {'numericalChange': numericalChange, 'percentChange':percentChange};
+    lookup[order[i]] = {'numericalChange': numericalChange, 'percentChange': percentChange};
   }
   return lookup; 
 }
