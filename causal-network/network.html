@@ -158,10 +158,10 @@ var force = d3.layout.force()
     .nodes(d3.values(points))
     .links(links)
     .size([width, height])
-    .linkDistance(90) //60
+    .linkDistance(90) //60 90
     .charge(-1500)  //-300  -1500
-    .on("tick", tick)
-    .start();
+    .on("tick", tick);
+    //.start();
 
 var resScale = d3.scale.linear()
     .domain([-10, 0, 10])
@@ -355,6 +355,11 @@ function linkArc(d) {
 function transform(d) {
   return "translate(" + d.x + "," + d.y + ")";
 }
+
+//Works, but not needed:  
+force.start();
+for (var i = 0; i < 1000; ++i) force.tick();
+force.stop();
 
 </script>
 </body>
