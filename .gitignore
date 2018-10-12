@@ -3,3 +3,5 @@ model/js/*
 model/notes/*
 causal-network/js/*
 causal-network/notes
+dynamic-system/*
+
