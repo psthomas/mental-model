@@ -175,7 +175,7 @@ var data = generateSectorLognorm(400, 'markets')
 
 
 //var margin = {top: 20, right: 20, bottom: 20, left: 70},
-var margin = {top: 20, right: 20, bottom: 20, left: 120},  
+var margin = {top: 20, right: 20, bottom: 20, left: 130},  
     width = 0.9*window.innerWidth - margin.left - margin.right,   //0.95
     height = 0.9*window.innerHeight - margin.top - margin.bottom;
 
@@ -210,7 +210,7 @@ var yScale = d3.scaleLinear()
 
 var rScale = d3.scaleLinear()
     .domain([0, 1])  
-    .range([3, 12]);  //3, 10
+    .range([3, 10]);  //3, 10
 
 
 //Define x, y axes w/o ticks
