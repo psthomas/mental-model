@@ -169,85 +169,6 @@ td {
 <script type="text/javascript">
 
 
-function generateCopula(rows, columns, correlation) {
-    //https://en.wikipedia.org/wiki/Copula_(probability_theory)
-
-    //Create uncorrelated standard normal samples
-    var normSamples = jStat.randn(rows, columns);
-
-    //Create lower triangular cholesky decomposition of correlation matrix
-    var A = jStat(jStat.cholesky(correlation));
-
-    //Create correlated samples through matrix multiplication
-    var normCorrSamples = A.multiply(normSamples);
-
-    //Convert to uniform correlated samples over 0,1 using normal CDF
-    var normDist = jStat.normal(0,1);
-    var uniformCorrSamples = normCorrSamples.map(function(x) {return normDist.cdf(x);});
-
-    return uniformCorrSamples;
-
-}
-
-
-//copulaToLognorm
-function generateCorrLognorm(number, mu, sigma, correlation) {
-
-    //Create uniform correlated copula
-    //https://en.wikipedia.org/wiki/Copula_(probability_theory)
-    var copula = generateCopula(mu.length, number, correlation);
-
-    //Create unique lognormal distribution for each marginal
-    var lognormDists = [];
-    for (var i = 0; i < mu.length; i++) {
-        lognormDists.push(jStat.lognormal(mu[i], sigma[i]));
-    }
-
-    //Generate correlated lognormal samples using the inverse transform method:
-    //https://en.wikipedia.org/wiki/Inverse_transform_sampling
-    var lognormCorrSamples = copula.map(function(x, row, col) {return lognormDists[row].inv(x);});
-    return lognormCorrSamples;
-}
-
-
-function generateSectorLognorm(number, sector) {
-    var settings = {
-        "markets": {"mu": [0,0], "sigma": [0.25, 0.5], "correlation":[[1.0, 0.5],[0.5, 1.0]]},
-        "government": {"mu": [0.3,0.6], "sigma": [0.3, 0.7], "correlation":[[1.0, 0.6],[0.6, 1.0]]},  
-        "research": {"mu": [0.3,1.0], "sigma": [0.3, 0.6], "correlation":[[1.0, 0.6],[0.6, 1.0]]}  
-    }
-    // var mult = {'markets': 0.7, 'government': 0.85, 'research': 1.0}
-    // var settings = {
-    //     "markets": {"mu": [0,0], "sigma": [0.25, 0.5], "correlation":[[1.0, 0.5],[0.5, 1.0]]},
-    //     "government": {"mu": [0.3,1], "sigma": [0.3, 0.7], "correlation":[[1.0, 0.6],[0.6, 1.0]]},  
-    //     "research": {"mu": [0.5,1], "sigma": [0.3, 0.6], "correlation":[[1.0, 0.6],[0.6, 1.0]]}  
-    // }
-    if (number === 0 ) {return [];}
-
-    var data  = generateCorrLognorm(number, settings[sector].mu, settings[sector].sigma, settings[sector].correlation);
-    data = data.transpose();
-
-    data = data.slice(0,data.length).map(function(a) {
-        var size = Math.random(), 
-            id = Math.round(size*1000000);
-
-        var x = a[0];
-
-        //Switch 10 percent of Y to negative
-        var y = Math.random() > 0.90 ? -a[1]/2 : a[1];
-        //var y = Math.random() > 0.90 ? -Math.sqrt(x*Math.random())/2 : Math.sqrt(x*Math.random());
-        //var y = Math.random() > 0.90 ? -Math.random()*Math.sqrt(x)/2 : Math.random()*Math.sqrt(x);
-        //var y = Math.random() > 0.90 ? -Math.random()*Math.log(x)/2 : Math.random()*Math.log(x);
-        //var y = Math.random() > 0.90 ? -Math.random()*Math.pow(x, 0.9)/2 : Math.random()*Math.pow(x, 0.9);
-        //var y = Math.random() > 0.90 ? -Math.random()*mult[sector]*Math.sqrt(x)/2 : Math.random()*mult[sector]*Math.sqrt(x);
-
-        return {"x":x, "y": y, "size": size, "id": id, "group": sector, "trans":0};
-    });
-
-    return data;
-}
-
-
 var data = generateSectorLognorm(400, 'markets')    
     .concat(generateSectorLognorm(100, 'government')) 
     .concat(generateSectorLognorm(50, 'research')); 
@@ -332,6 +253,84 @@ svg.append("g")
 var budget = 10,   //100
     score = 0;
     steps = 0;
+
+function generateCopula(rows, columns, correlation) {
+    //https://en.wikipedia.org/wiki/Copula_(probability_theory)
+
+    //Create uncorrelated standard normal samples
+    var normSamples = jStat.randn(rows, columns);
+
+    //Create lower triangular cholesky decomposition of correlation matrix
+    var A = jStat(jStat.cholesky(correlation));
+
+    //Create correlated samples through matrix multiplication
+    var normCorrSamples = A.multiply(normSamples);
+
+    //Convert to uniform correlated samples over 0,1 using normal CDF
+    var normDist = jStat.normal(0,1);
+    var uniformCorrSamples = normCorrSamples.map(function(x) {return normDist.cdf(x);});
+
+    return uniformCorrSamples;
+
+}
+
+
+//copulaToLognorm
+function generateCorrLognorm(number, mu, sigma, correlation) {
+
+    //Create uniform correlated copula
+    //https://en.wikipedia.org/wiki/Copula_(probability_theory)
+    var copula = generateCopula(mu.length, number, correlation);
+
+    //Create unique lognormal distribution for each marginal
+    var lognormDists = [];
+    for (var i = 0; i < mu.length; i++) {
+        lognormDists.push(jStat.lognormal(mu[i], sigma[i]));
+    }
+
+    //Generate correlated lognormal samples using the inverse transform method:
+    //https://en.wikipedia.org/wiki/Inverse_transform_sampling
+    var lognormCorrSamples = copula.map(function(x, row, col) {return lognormDists[row].inv(x);});
+    return lognormCorrSamples;
+}
+
+
+function generateSectorLognorm(number, sector) {
+    var settings = {
+        "markets": {"mu": [0,0], "sigma": [0.25, 0.5], "correlation":[[1.0, 0.5],[0.5, 1.0]]},
+        "government": {"mu": [0.3,0.6], "sigma": [0.3, 0.7], "correlation":[[1.0, 0.6],[0.6, 1.0]]},  
+        "research": {"mu": [0.3,1.0], "sigma": [0.3, 0.6], "correlation":[[1.0, 0.6],[0.6, 1.0]]}  
+    }
+    // var mult = {'markets': 0.7, 'government': 0.85, 'research': 1.0}
+    // var settings = {
+    //     "markets": {"mu": [0,0], "sigma": [0.25, 0.5], "correlation":[[1.0, 0.5],[0.5, 1.0]]},
+    //     "government": {"mu": [0.3,1], "sigma": [0.3, 0.7], "correlation":[[1.0, 0.6],[0.6, 1.0]]},  
+    //     "research": {"mu": [0.5,1], "sigma": [0.3, 0.6], "correlation":[[1.0, 0.6],[0.6, 1.0]]}  
+    // }
+    if (number === 0 ) {return [];}
+
+    var data  = generateCorrLognorm(number, settings[sector].mu, settings[sector].sigma, settings[sector].correlation);
+    data = data.transpose();
+
+    data = data.slice(0,data.length).map(function(a) {
+        var size = Math.random(), 
+            id = Math.round(size*1000000);
+
+        var x = a[0];
+
+        //Switch 10 percent of Y to negative
+        var y = Math.random() > 0.90 ? -a[1]/2 : a[1];
+        //var y = Math.random() > 0.90 ? -Math.sqrt(x*Math.random())/2 : Math.sqrt(x*Math.random());
+        //var y = Math.random() > 0.90 ? -Math.random()*Math.sqrt(x)/2 : Math.random()*Math.sqrt(x);
+        //var y = Math.random() > 0.90 ? -Math.random()*Math.log(x)/2 : Math.random()*Math.log(x);
+        //var y = Math.random() > 0.90 ? -Math.random()*Math.pow(x, 0.9)/2 : Math.random()*Math.pow(x, 0.9);
+        //var y = Math.random() > 0.90 ? -Math.random()*mult[sector]*Math.sqrt(x)/2 : Math.random()*mult[sector]*Math.sqrt(x);
+
+        return {"x":x, "y": y, "size": size, "id": id, "group": sector, "trans":0};
+    });
+
+    return data;
+}
 
 
 function calculateUpdate() {
